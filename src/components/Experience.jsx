@@ -67,7 +67,7 @@ export const Experience = () => {
       <Map
         // scale={maps[map].scale}
         // position={maps[map].position}
-        model={`${process.env.PUBLIC_URL}/models/${map}.glb`}
+        model={`models/${map}.glb`}
       />
         <CharacterController />
       </Physics>
