@@ -42,17 +42,6 @@ export const CharacterController = () => {
         
               let speed = get().run ? RUN_SPEED : WALK_SPEED;
         
-              if (isClicking.current) {
-                console.log("clicking", mouse.x, mouse.y);
-                if (Math.abs(mouse.x) > 0.1) {
-                  movement.x = -mouse.x;
-                }
-                movement.z = mouse.y + 0.4;
-                if (Math.abs(movement.x) > 0.5 || Math.abs(movement.z) > 0.5) {
-                  speed = RUN_SPEED;
-                }
-              }
-        
               if (get().left) {
                 movement.x = 1;
               }
@@ -60,33 +49,11 @@ export const CharacterController = () => {
                 movement.x = -1;
               }
         
-              if (movement.x !== 0) {
-                rotationTarget.current += ROTATION_SPEED * movement.x;
-              }
-        
               if (movement.x !== 0 || movement.z !== 0) {
-                characterRotationTarget.current = Math.atan2(movement.x, movement.z);
-                vel.x =
-                  Math.sin(rotationTarget.current + characterRotationTarget.current) *
-                  speed;
-                vel.z =
-                  Math.cos(rotationTarget.current + characterRotationTarget.current) *
-                  speed;
-                if (speed === RUN_SPEED) {
-                  setAnimation("run");
-                } else {
-                  setAnimation("walk");
-                }
-              } else {
-                setAnimation("idle");
-              }
-              character.current.rotation.y = lerpAngle(
-                character.current.rotation.y,
-                characterRotationTarget.current,
-                0.1
-              );
-        
-              rb.current.setLinvel(vel, true);
+                vel.z = speed * movement.z;
+              } 
+
+            rb.current.setLinvel(vel, true);
         }
 
         cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
@@ -118,6 +85,6 @@ export const CharacterController = () => {
           args={[0.05, 0.25]} // Adjust these values to fit your character
           position={[0, 0.3, 0]} // Adjust this to align with the character's center
         />
-      </RigidBody>
+    </RigidBody>
     );
 };
