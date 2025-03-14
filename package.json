@@ -11,6 +11,10 @@
   "dependencies": {
     "@react-three/drei": "^10.0.3",
     "@react-three/fiber": "^9.0.4",
+    "@react-three/rapier": "^2.0.0",
+    "@types/three": "^0.174.0",
+    "leva": "^0.10.0",
+    "noisejs": "^2.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.173.0"
