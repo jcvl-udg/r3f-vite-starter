@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { Vector3 } from "three";
 import { useFrame } from "@react-three/fiber";
 import { cameraPosition } from "three/tsl";
+import { useControls } from "leva";
+import { useKeyboardControls } from "@react-three/drei";
 
 
 export const CharacterController = () => { 
@@ -15,9 +17,78 @@ export const CharacterController = () => {
     const cameraWorldPosition = useRef(new Vector3());
     const cameraLookAtWorldPosition = useRef(new Vector3());
     const cameraLookAt = useRef(new Vector3());
-
+    // Rigid body refs 
+    const rb = useRef();
+    const { WALK_SPEED, RUN_SPEED } = useControls("Character Control" , {
+        WALK_SPEED: { value: 0.8, min: 0.1, max: 4, step: 0.1 },
+        RUN_SPEED: { value: 1.6, min: 0.2, max: 12, step: 0.1 },
+    });
+    const [, get] = useKeyboardControls();
     // Useframe 4 update cameras 
     useFrame(({camera}) => {
+        if(rb.current){
+            const vel = rb.current.linvel();
+            const movement = {
+                x: 0,
+                z: 0,
+              };
+        
+              if (get().forward) {
+                movement.z = 1;
+              }
+              if (get().backward) {
+                movement.z = -1;
+              }
+        
+              let speed = get().run ? RUN_SPEED : WALK_SPEED;
+        
+              if (isClicking.current) {
+                console.log("clicking", mouse.x, mouse.y);
+                if (Math.abs(mouse.x) > 0.1) {
+                  movement.x = -mouse.x;
+                }
+                movement.z = mouse.y + 0.4;
+                if (Math.abs(movement.x) > 0.5 || Math.abs(movement.z) > 0.5) {
+                  speed = RUN_SPEED;
+                }
+              }
+        
+              if (get().left) {
+                movement.x = 1;
+              }
+              if (get().right) {
+                movement.x = -1;
+              }
+        
+              if (movement.x !== 0) {
+                rotationTarget.current += ROTATION_SPEED * movement.x;
+              }
+        
+              if (movement.x !== 0 || movement.z !== 0) {
+                characterRotationTarget.current = Math.atan2(movement.x, movement.z);
+                vel.x =
+                  Math.sin(rotationTarget.current + characterRotationTarget.current) *
+                  speed;
+                vel.z =
+                  Math.cos(rotationTarget.current + characterRotationTarget.current) *
+                  speed;
+                if (speed === RUN_SPEED) {
+                  setAnimation("run");
+                } else {
+                  setAnimation("walk");
+                }
+              } else {
+                setAnimation("idle");
+              }
+              character.current.rotation.y = lerpAngle(
+                character.current.rotation.y,
+                characterRotationTarget.current,
+                0.1
+              );
+        
+              rb.current.setLinvel(vel, true);
+        }
+
         cameraPosition.current.getWorldPosition(cameraWorldPosition.current);
         camera.position.lerp(cameraWorldPosition.current, 0.1);
 
@@ -28,12 +99,14 @@ export const CharacterController = () => {
             camera.lookAt(cameraLookAt.current);
         }
     });
+
     return (
     <RigidBody
         lockRotations
         colliders={false}
         position={[1, 1, 3]} // Initial position of the character
->
+        ref={rb}
+    >
         <group ref={container} >
             <group ref={cameraTarget} position-z={1.5} />    
             <group ref={cameraPosition} position-y={4} position-z={-4} /> 

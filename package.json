@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://jcvl-udg.github.io/r3f-vite-starter",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
