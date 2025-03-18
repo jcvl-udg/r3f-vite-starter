@@ -10,6 +10,8 @@ import { Map } from "./Map";
 import { Physics } from "@react-three/rapier";
 import { CharacterController } from "./CharacterController";
 
+import Mapz from "./Mapz";
+
 const maps = {
   map_chicago_city: {
     scale: 3,
@@ -44,7 +46,7 @@ export const Experience = () => {
 
   return (
     <>
-      {/* <OrbitControls /> */}
+      <OrbitControls />
       <Environment preset="sunset" />
       <directionalLight
         intensity={0.65}
@@ -64,11 +66,12 @@ export const Experience = () => {
         />
       </directionalLight>
       <Physics debug > 
-      <Map
+      {/* <Map
         // scale={maps[map].scale}
         // position={maps[map].position}
         model={`models/${map}.glb`}
-      />
+      /> */}
+      <Mapz />
         <CharacterController />
       </Physics>
     </>
