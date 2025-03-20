@@ -1,38 +1,41 @@
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState, useRef } from "react";
 import * as THREE from "three";
 import { createNoise2D } from "simplex-noise";
 import { RigidBody } from "@react-three/rapier";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Html } from "@react-three/drei";
 import Papa from "papaparse";
 
-const dokmnt = "SNIB-P083-CSV-Validado.csv";
+const dokmnt = "public/SNIB-P083-CSV-Validado.csv"; // Ensure the file is in the public folder
 
 const Mapz = ({ model }) => {
   const [plants, setPlants] = useState([]); // State to store parsed plant data
+  const [selectedPlant, setSelectedPlant] = useState(null); // State to store the selected plant
+  const { camera, scene } = useThree(); // Access the camera and scene
+  const raycaster = new THREE.Raycaster(); // Raycaster for interaction
+  const mouse = new THREE.Vector2(); // Mouse position
 
   // Parse the CSV file on component mount
   useEffect(() => {
-    fetch(dokmnt) // Fetch the CSV file
-      .then((response) => response.text()) // Get the file content as text
+    fetch(dokmnt)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.text();
+      })
       .then((csvText) => {
-        // Remove the source map line
-        // const cleanedCsvText = csvText.replace(
-        //   /\/\/# sourceMappingURL=data:application\/json;base64,.*/,
-        //   ""
-        // );
-
-        // Parse the cleaned CSV text
         Papa.parse(csvText, {
+          delimiter: ",",
           header: true,
           dynamicTyping: true,
-          complete: (result) => {
-            if (result.errors.length > 0) {
-              console.error("Errors parsing CSV:", result.errors);
-            } else {
-              setPlants(result.data); // Store parsed data in state
-            }
+          skipEmptyLines: true,
+          complete: function (results) {
+            console.log("Parsed CSV:", results.data);
+            setPlants(results.data); // Update state with parsed data
           },
-          error: (error) => {
-            console.error("Error parsing CSV:", error);
+          error: function (err) {
+            console.error("Error parsing CSV:", err);
           },
         });
       })
@@ -41,11 +44,36 @@ const Mapz = ({ model }) => {
       });
   }, []);
 
+  // Handle mouse clicks
+  useEffect(() => {
+    const handleClick = (event) => {
+      // Convert mouse position to normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Raycast from the camera to the mouse position
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      // Check if a plant was clicked
+      if (intersects.length > 0) {
+        const plantMesh = intersects[0].object;
+        const plantIndex = plantMesh.userData.index; // Store plant index in userData
+        setSelectedPlant(plants[plantIndex]);
+      } else {
+        setSelectedPlant(null); // Deselect if no plant was clicked
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [plants, camera, scene]);
+
   // Generate Perlin noise terrain
   const terrain = useMemo(() => {
     const width = 100; // Terrain width
     const height = 100; // Terrain height
-    const scale = 20; // Scale of the noise
+    const scale = 15; // Scale of the noise
     const noise2D = createNoise2D(); // Create a 2D noise function
     const terrain = [];
 
@@ -70,7 +98,7 @@ const Mapz = ({ model }) => {
       vertices[i + 2] = terrain[Math.floor(j / width)][j % width] * 10; // Adjust height
     }
 
-    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00, wireframe: false });
+    const material = new THREE.MeshStandardMaterial({ color: 0x7570b3, wireframe: false });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2; // Rotate to make it horizontal
     return mesh;
@@ -92,7 +120,11 @@ const Mapz = ({ model }) => {
       const z = terrain[x][y] * 10; // Adjust height based on terrain
 
       return (
-        <mesh key={index} position={[x - width / 2, z, y - height / 2]}>
+        <mesh
+          key={index}
+          position={[x - width / 2, z, y - height / 2]}
+          userData={{ index }} // Store plant index in userData
+        >
           <sphereGeometry args={[0.2, 8, 8]} /> {/* Simple sphere for plants */}
           <meshStandardMaterial color="red" />
         </mesh>
@@ -100,10 +132,27 @@ const Mapz = ({ model }) => {
     });
   }, [plants, terrain]);
 
+  // UI Component for displaying plant data
+  const PlantInfo = ({ plant }) => {
+    if (!plant) return null;
+
+    return (
+      <Html position={[0, 1, 0]}> {/* Position the UI above the plant */}
+        <div style={{ background: "white", padding: "10px", borderRadius: "5px" }}>
+          <h3>{plant.nombreCientifico_snib}</h3>
+          <p>Family: {plant.familia_snib}</p>
+          <p>Status: {plant.estatus}</p>
+          {/* Add more fields as needed */}
+        </div>
+      </Html>
+    );
+  };
+
   return (
     <RigidBody type="fixed" colliders="trimesh">
       <primitive object={terrainMesh} />
       {plantMeshes} {/* Render plants */}
+      {selectedPlant && <PlantInfo plant={selectedPlant} />} {/* Display plant info */}
     </RigidBody>
   );
 };

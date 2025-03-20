@@ -72,7 +72,7 @@ export const Experience = () => {
         model={`models/${map}.glb`}
       /> */}
       <Mapz />
-        <CharacterController />
+        {/* <CharacterController /> */}
       </Physics>
     </>
   );
