@@ -13,7 +13,7 @@ const keyboardMap = [
 function App() {
   return (
     <KeyboardControls map={keyboardMap}>
-    <Canvas shadows camera={{ position: [3, 3, 3], fov: 30 }}>
+    <Canvas shadows camera={{ position: [3, 3, 3], fov: 30 }} name="CANVAS">
       <color attach="background" args={["#ececec"]} />
       <Experience />
     </Canvas>

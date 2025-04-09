@@ -1,8 +1,8 @@
 import { CapsuleCollider, RigidBody } from "@react-three/rapier";
 import { Character } from "./Character";
-import { useRef, useState } from "react";
-import { MathUtils, Vector3 } from "three";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useState, useEffect } from "react";
+import { MathUtils, Vector3, Vector2, Raycaster } from "three";
+import { useFrame , useThree } from "@react-three/fiber";
 import { cameraPosition } from "three/tsl";
 import { useControls } from "leva";
 import { useKeyboardControls } from "@react-three/drei";
@@ -44,8 +44,8 @@ export const CharacterController = () => {
     const rotationTarget = useRef(0);
     const characterRotationTarget = useRef(0);
     const { WALK_SPEED, RUN_SPEED , ROTATION_SPEED} = useControls("Character Control" , {
-        WALK_SPEED: { value: 0.8, min: 0.1, max: 4, step: 0.1 },
-        RUN_SPEED: { value: 1.6, min: 0.2, max: 12, step: 0.1 },      
+        WALK_SPEED: { value: 1.8, min: 0.1, max: 4, step: 0.1 },
+        RUN_SPEED: { value: 2.6, min: 0.2, max: 12, step: 0.1 },      
         ROTATION_SPEED: {
             value: degToRad(0.5),
             min: degToRad(0.1),
@@ -54,6 +54,44 @@ export const CharacterController = () => {
           },
     });
     const [, get] = useKeyboardControls();
+
+    // Plants ref
+    const [selectedPlant, setSelectedPlant] = useState(null);
+    const mouse = new Vector2();
+    const raycaster = new Raycaster();
+    const { camera, scene } = useThree();
+    // 
+    useEffect(() => {
+      const handleClick = (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(scene.children, true);
+    
+        if (intersects.length > 0) {
+          // Find the first object with plant data
+          const clickedObject = intersects[0].object;
+          let current = clickedObject;
+          let plantData = null;
+          
+          // Traverse up the hierarchy to find plant data
+          while (current && !plantData) {
+            if (current.userData?.plantData) {
+              plantData = current.userData.plantData;
+            }
+            current = current.parent;
+          }
+          
+          setSelectedPlant(plantData);
+        } else {
+          setSelectedPlant(null);
+        }
+      };
+    
+      window.addEventListener("click", handleClick);
+      return () => window.removeEventListener("click", handleClick);
+    }, [camera, scene]);
     // Useframe 4 update cameras 
     useFrame(({camera}) => {
         if(rb.current){

@@ -65,7 +65,7 @@ export const Experience = () => {
           attach={"shadow-camera"}
         />
       </directionalLight>
-      <Physics debug > 
+      <Physics debug gravity={[0, -30, 0]}> 
       {/* <Map
         // scale={maps[map].scale}
         // position={maps[map].position}
